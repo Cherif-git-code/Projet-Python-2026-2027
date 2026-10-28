@@ -1,5 +1,5 @@
-   pandas
-   requests
-   matplotlib
-   seaborn
-   jupyter
+pandas
+requests
+matplotlib
+seaborn
+jupyter
