@@ -27,3 +27,28 @@ Y=calcul_moy_region_conso['Conso-moyenne_MW']
 # plt.title('consomation moyenne par région')
 
 # plt.show()
+
+# ----------------------Précis sur les régions et les horaires en filtrant hiver et été
+conso_heure_region=donnee_cons_regio.loc[:,['libelle_region','date_heure','consommation']]
+conso_heure_region['date_heure']=pd.to_datetime(conso_heure_region['date_heure']).dt.tz_convert("Europe/Paris")
+conso_heure_region['mois']=conso_heure_region["date_heure"].dt.month 
+conso_heure_region['jours']=conso_heure_region["date_heure"].dt.day
+conso_heure_region["heure"]=conso_heure_region["date_heure"].dt.hour
+
+saisons={"Hiver":[12,1,2],"Printemps":[3,4,5],
+                  'Eté':[6,7,8], 'Automne':[9,10,11]}
+mois_vers_saison = {}
+for saison, liste_mois in saisons.items():
+    for mois in liste_mois:
+        mois_vers_saison[mois] = saison
+
+
+conso_heure_region["saison"]=conso_heure_region["mois"].map(mois_vers_saison)
+conso_calcul_saison=conso_heure_region.groupby("saison")['consommation'].mean().reset_index()
+X=conso_calcul_saison['saison']
+Y=conso_calcul_saison['consommation']
+plt.bar(X,Y)
+plt.xlabel(xlabel='Saisons')
+plt.ylabel(ylabel='consommation')
+plt.title('Diagramme en baton mettant en relation la consommation en Ile de france en fonction des saisons')
+
