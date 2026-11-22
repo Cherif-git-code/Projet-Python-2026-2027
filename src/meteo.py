@@ -37,11 +37,10 @@ def temp_journ(df):
 def preparer_meteo(meteo):
     """Nettoie et enrichit le tableau météo.
 
-    - retire la radiation solaire
     - convertit l'horodatage UTC en heure française
     - ajoute les indicateurs horaires et journaliers de froid et de chaleur
     """
-    df = meteo.drop(columns=["shortwave_radiation"], errors="ignore").copy()
+    df = meteo
 
     # Conversion UTC -> heure française
     df["time"] = df["time"].dt.tz_convert("Europe/Paris")
