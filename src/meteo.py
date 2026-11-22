@@ -40,7 +40,7 @@ def preparer_meteo(meteo):
     - convertit l'horodatage UTC en heure française
     - ajoute les indicateurs horaires et journaliers de froid et de chaleur
     """
-    df = meteo
+    df = meteo.copy()
 
     # Conversion UTC -> heure française
     df["time"] = df["time"].dt.tz_convert("Europe/Paris")
