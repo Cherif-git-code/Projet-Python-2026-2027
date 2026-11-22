@@ -5,11 +5,12 @@ import requests
 
 url = "https://odre.opendatasoft.com/api/explore/v2.1/catalog/datasets/eco2mix-regional-cons-def/exports/csv"
 params = {
-    "select": "code_insee_region,libelle_region,date_heure,consommation,nucleaire",
-    "where": 'libelle_region="Île-de-France" and date_heure>="2020-01-01"'}
+    "select": "code_insee_region,libelle_region,date_heure,consommation,nucleaire,eolien,solaire,hydraulique",
+        "where": 'date_heure>="2021-01-01" and date_heure<"2026-01-01"'}
 reponse=requests.get(url,params=params)
 print(reponse.status_code)
-donnee_cons_regio=pd.read_csv(io.StringIO(reponse.text),sep=';')
+donnee_cons_regio=pd.read_csv(io.StringIO(reponse.text),sep=';',dtype={"eolien": str})
+donnee_cons_regio.to_parquet("data/raw/eco2mix_regional.parquet", index=False)
 
 region_conso=donnee_cons_regio.loc[:,['libelle_region','consommation']]
 
