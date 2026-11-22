@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import pandas as pd
+import matplotlib.pyplot as plt
 
 SEUIL_FROID = 15   # en dessous de 15°C, on estime que les ménages français commencent à chauffer
 SEUIL_CHAUD = 27   # Pareillement au dessus de 27°C, on estime qu'ils climatisent
@@ -70,15 +71,17 @@ def preparer_meteo(meteo):
     df["vent100_max_jour"] = df.groupby(["ville", "jour"])["wind_speed_100m"].transform("max")
     return df
 
-def cumul_mensuel(meteo, ville):
-    """Précipitations cumulées par mois (mm) pour une ville."""
+def cumul_mensuel_precipitation(meteo,ville) :
     return (
         meteo[meteo["ville"] == ville]
         .set_index("time")["precipitation"]
         .resample("MS").sum()
-    ) #On prend uniquement pour une ville, on garde que précipitation et on somme par mois
+    ) 
 
-#On fait l'équivalent pour les températures
+
+    #On prend uniquement pour une ville, on garde que précipitation et on somme par mois
+
+#On fait l'équivalent pour les températures et la vitesse du vent
 def _serie_jour(meteo, ville, colonne):
     """Une valeur par jour pour une ville, indexée par une vraie date."""
     j = meteo[meteo["ville"] == ville].drop_duplicates("jour")
@@ -97,3 +100,70 @@ def temperature_max_jour(meteo, ville):
 def vent_moyen_jour(meteo, ville):
     """Vitesse moyenne du vent à 100 m pour chaque jour (unité de l'API, km/h par défaut)."""
     return _serie_jour(meteo, ville, "vent100_moy_jour")
+
+def vent_max_jour(meteo, ville):
+    """Vitesse maximum du vent à 100 m pour chaque jour (unité de l'API, km/h par défaut)."""
+    return _serie_jour(meteo, ville, "vent100_max_jour")
+
+
+
+#Fonctions utiliser pour plot les fonctions précédentes
+
+
+def tracer_cumul_mensuel_precipitation(meteo, ville):
+    """Précipitations cumulées par mois (mm) pour une ville."""
+    pluie= cumul_mensuel_precipitation(meteo,ville)
+    fig, ax = plt.subplots(figsize=(12, 4))
+    ax.bar(pluie.index, pluie.values, width=25)
+    ax.set_title(f"Précipitations mensuelles cumulées à {ville.capitalize()} (2021-2025)")
+    ax.set_xlabel("Mois")
+    ax.set_ylabel("Précipitations en mm")
+    plt.show()
+
+def tracer_temperature_moyenne_jour(meteo, ville):
+    tmoy = temperature_moyenne_jour(meteo, ville)
+    fig, ax = plt.subplots(figsize=(13, 4))
+    ax.plot(tmoy.index, tmoy.values, linewidth=0.8, color="tab:blue", label="Température moyenne")
+    ax.axhline(SEUIL_FROID, color="tab:cyan", linestyle="--", label=f"Seuil de froid ({SEUIL_FROID} °C, sur la moyenne)")
+    ax.axhline(SEUIL_CHAUD, color="tab:red", linestyle="--", label=f"Seuil de chaleur ({SEUIL_CHAUD} °C, sur le maximum)")
+    ax.set_title(f"Températures moyennes journalières à {ville.capitalize()} (2021-2025)")
+    ax.set_xlabel("Date"); ax.set_ylabel("Température (°C)")
+    ax.legend(loc="upper left")
+    plt.show()
+
+def tracer_temperature_max_jour(meteo,ville) :
+    tmax = temperature_max_jour(meteo, ville)
+    fig, ax = plt.subplots(figsize=(13, 4))
+    ax.plot(tmax.index, tmax.values, linewidth=0.8, color="tab:orange", label="Température maximale")
+    ax.axhline(SEUIL_FROID, color="tab:cyan", linestyle="--", label=f"Seuil de froid ({SEUIL_FROID} °C, sur la moyenne)")
+    ax.axhline(SEUIL_CHAUD, color="tab:red", linestyle="--", label=f"Seuil de chaleur ({SEUIL_CHAUD} °C, sur le maximum)")
+    ax.set_title(f"Températures maximales journalières à {ville.capitalize()} (2021-2025)")
+    ax.set_xlabel("Date"); ax.set_ylabel("Température (°C)")
+    ax.legend(loc="upper left")
+    plt.show()
+
+def tracer_vent_moyen_jour(meteo, ville):
+    vent = vent_moyen_jour(meteo, ville)
+
+    fig, ax = plt.subplots(figsize=(13, 4))
+    ax.plot(vent.index, vent.values, linewidth=0.8, color="tab:green", label="Vent moyen journalier à 100 m")
+    ax.plot(vent.index, vent.rolling(30, center=True).mean(), linewidth=1.8, color="tab:red",
+            label="Moyenne mobile 30 jours")
+    ax.axhline(vent.mean(), color="gray", linestyle="--", label=f"Moyenne 2021-2025 ({vent.mean():.1f} km/h)")
+    ax.set_title(f"Vitesse moyenne journalière du vent à 100 m à {ville.capitalize()} (2021-2025)")
+    ax.set_xlabel("Date"); ax.set_ylabel("Vitesse du vent (km/h)")
+    ax.legend(loc="upper left")
+    plt.show()
+
+def tracer_vent_max_jour(meteo, ville):
+    vent = vent_max_jour(meteo, ville)
+
+    fig, ax = plt.subplots(figsize=(13, 4))
+    ax.plot(vent.index, vent.values, linewidth=0.8, color="tab:green", label="Vent max journalier à 100 m")
+    ax.plot(vent.index, vent.rolling(30, center=True).mean(), linewidth=1.8, color="tab:red",
+            label="Moyenne mobile 30 jours")
+    ax.axhline(vent.mean(), color="gray", linestyle="--", label=f"Moyenne 2021-2025 ({vent.mean():.1f} km/h)")
+    ax.set_title(f"Vitesse max journalière du vent à 100 m à {ville.capitalize()} (2021-2025)")
+    ax.set_xlabel("Date"); ax.set_ylabel("Vitesse du vent (km/h)")
+    ax.legend(loc="upper left")
+    plt.show()
