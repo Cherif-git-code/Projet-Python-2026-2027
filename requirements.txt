@@ -3,3 +3,6 @@
    matplotlib
    seaborn
    jupyter
+   json
+   pathlib
+   IPython.display

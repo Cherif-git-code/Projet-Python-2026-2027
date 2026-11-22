@@ -34,8 +34,9 @@ Deux API complémentaires ont été mobilisées :
 
 ## Fichiers et organisation
 
-- `data/` : jeux de données utilisés, leur mode de téléchargement et les transformations qui leur ont été appliquées.
+- `data/` : jeux de données utilisés et leur mode de téléchargement .
 - `Rendu_final.ipynb` : notebook retraçant l'ensemble du déroulé du projet, de la collecte des données à l'analyse des hypothèses.
+- `src` : Fichier dans lequel se trouvent les fichier py dans lesquel toutes les fonctions utilisées dans le rendu final sont détaillé
 
 
 
