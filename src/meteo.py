@@ -35,17 +35,40 @@ def temp_journ(df):
     return jour
 
 def preparer_meteo(meteo):
-    """On retire la radiation car on en fait rien et on ajoute les indicateurs de froid et de chaleur."""
-    #donc on enlève la radiation
-    df = meteo.drop(columns=["shortwave_radiation"]).copy() 
+    """Nettoie et enrichit le tableau météo.
 
-    # On vérifie si la température et sous le seuil
+    - retire la radiation solaire
+    - convertit l'horodatage UTC en heure française
+    - ajoute les indicateurs horaires et journaliers de froid et de chaleur
+    """
+    df = meteo.drop(columns=["shortwave_radiation"], errors="ignore").copy()
+
+    # Conversion UTC -> heure française
+    df["time"] = df["time"].dt.tz_convert("Europe/Paris")
+
+    # Retire l'heure qui déborde sur 2026 (31/12/2025 23 h UTC = 01/01/2026 0 h locale)
+    df = df[df["time"].dt.year <= 2025].copy()
+
+    df["jour"] = df["time"].dt.date                  # date seule, sans heure
+
+    # Indicateurs horaires
     df["sous_15"] = df["temperature_2m"] < SEUIL_FROID
     df["sup_27"] = df["temperature_2m"] > SEUIL_CHAUD
 
-    # On vérifie à quel point la température est sous le seuil
+    # Intensité (optionnel)
     df["deg_sous_15"] = (SEUIL_FROID - df["temperature_2m"]).clip(lower=0)
     df["deg_sup_27"] = (df["temperature_2m"] - SEUIL_CHAUD).clip(lower=0)
+
+    # Indicateurs journaliers (valeur répétée sur toutes les heures du jour)
+    par_jour = df.groupby(["ville", "jour"])["temperature_2m"]
+    df["tmax_jour"] = par_jour.transform("max")
+    df["tmoy_jour"] = par_jour.transform("mean")
+    df["jour_chaud"] = df["tmax_jour"] > SEUIL_CHAUD
+    df["jour_froid"] = df["tmoy_jour"] < SEUIL_FROID
+    
+    #Indicateur journalier de la vitesse moyenne du vent à 100m 
+    df["vent100_moy_jour"] = df.groupby(["ville", "jour"])["wind_speed_100m"].transform("mean")
+    df["vent100_max_jour"] = df.groupby(["ville", "jour"])["wind_speed_100m"].transform("max")
     return df
 
 def cumul_mensuel(meteo, ville):
@@ -54,4 +77,24 @@ def cumul_mensuel(meteo, ville):
         meteo[meteo["ville"] == ville]
         .set_index("time")["precipitation"]
         .resample("MS").sum()
-    )
+    ) #On prend uniquement pour une ville, on garde que précipitation et on somme par mois
+
+#On fait l'équivalent pour les températures
+def _serie_jour(meteo, ville, colonne):
+    """Une valeur par jour pour une ville, indexée par une vraie date."""
+    j = meteo[meteo["ville"] == ville].drop_duplicates("jour")
+    return j.set_index(pd.to_datetime(j["jour"]))[colonne].sort_index()
+
+
+def temperature_moyenne_jour(meteo, ville):
+    """Température moyenne de chaque jour (°C)."""
+    return _serie_jour(meteo, ville, "tmoy_jour")
+
+
+def temperature_max_jour(meteo, ville):
+    """Température maximale de chaque jour (°C)."""
+    return _serie_jour(meteo, ville, "tmax_jour")
+
+def vent_moyen_jour(meteo, ville):
+    """Vitesse moyenne du vent à 100 m pour chaque jour (unité de l'API, km/h par défaut)."""
+    return _serie_jour(meteo, ville, "vent100_moy_jour")
