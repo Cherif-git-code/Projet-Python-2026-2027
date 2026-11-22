@@ -47,3 +47,11 @@ def preparer_meteo(meteo):
     df["deg_sous_15"] = (SEUIL_FROID - df["temperature_2m"]).clip(lower=0)
     df["deg_sup_27"] = (df["temperature_2m"] - SEUIL_CHAUD).clip(lower=0)
     return df
+
+def cumul_mensuel(meteo, ville):
+    """Précipitations cumulées par mois (mm) pour une ville."""
+    return (
+        meteo[meteo["ville"] == ville]
+        .set_index("time")["precipitation"]
+        .resample("MS").sum()
+    )
