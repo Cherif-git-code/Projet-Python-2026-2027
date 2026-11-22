@@ -23,3 +23,25 @@ def charger_eco2mix(chemin="data/raw/eco2mix_regional.parquet"):
     df = pd.read_csv(io.StringIO(reponse.text), sep=";", dtype={"eolien": str})
     df.to_parquet(chemin, index=False)
     return df
+# Une ville par région (chef-lieu), avec les mêmes noms que dans les données météo de Hugo
+REGION_VERS_VILLE = {
+    11: "paris", 84: "lyon", 27: "dijon", 53: "rennes",
+    24: "orleans", 44: "strasbourg", 32: "lille", 28: "rouen",
+    75: "bordeaux", 76: "toulouse", 52: "nantes", 93: "marseille",
+}
+
+COLONNES_ELEC = ["consommation", "nucleaire", "eolien", "solaire", "hydraulique"]
+
+
+def preparer_eco2mix(df):
+    """Nettoie les données éCO2mix et passe de la demi-heure à l'heure (moyenne des deux demi-heures)."""
+    df = df.copy()
+    df["eolien"] = pd.to_numeric(df["eolien"], errors="coerce")   # "-" devient une valeur manquante
+    df["date_heure"] = pd.to_datetime(df["date_heure"], utc=True)
+    df = df.dropna(subset=["consommation"])                        # la demi-heure vide du 31/12/2025 23h UTC
+
+    df["time"] = df["date_heure"].dt.floor("h")                    # 14h30 devient 14h00
+    horaire = df.groupby(["code_insee_region", "time"])[COLONNES_ELEC].mean().reset_index()
+
+    horaire["ville"] = horaire["code_insee_region"].map(REGION_VERS_VILLE)
+    return horaire
