@@ -105,7 +105,8 @@ def vent_max_jour(meteo, ville):
     """Vitesse maximum du vent à 100 m pour chaque jour (unité de l'API, km/h par défaut)."""
     return _serie_jour(meteo, ville, "vent100_max_jour")
 
-
+def precipitation_jour(meteo,ville) :
+    return _serie_jour(meteo, ville, "precipitation")
 
 #Fonctions utiliser pour plot les fonctions précédentes
 
@@ -165,5 +166,18 @@ def tracer_vent_max_jour(meteo, ville):
     ax.axhline(vent.mean(), color="gray", linestyle="--", label=f"Moyenne 2021-2025 ({vent.mean():.1f} km/h)")
     ax.set_title(f"Vitesse max journalière du vent à 100 m à {ville.capitalize()} (2021-2025)")
     ax.set_xlabel("Date"); ax.set_ylabel("Vitesse du vent (km/h)")
+    ax.legend(loc="upper left")
+    plt.show()
+
+def tracer_precipitation_jour(meteo, ville):
+    pluie = precipitation_jour(meteo,ville)
+
+    fig, ax = plt.subplots(figsize=(13, 4))
+    ax.plot(pluie.index, pluie.values, linewidth=0.8, color="tab:green", label="precipitation journalière")
+    ax.plot(pluie.index, pluie.rolling(30, center=True).mean(), linewidth=1.8, color="tab:red",
+            label="Moyenne mobile 30 jours")
+    ax.axhline(pluie.mean(), color="gray", linestyle="--", label=f"Moyenne 2021-2025 ({pluie.mean():.1f} mm)")
+    ax.set_title(f"Precipitation journalière à {ville.capitalize()} (2021-2025)")
+    ax.set_xlabel("Date"); ax.set_ylabel("precipitation (mm)")
     ax.legend(loc="upper left")
     plt.show()

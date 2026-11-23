@@ -1,19 +1,29 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def moyenne_eolien(donnees, ville, col_prod="eolien", groupe="ville"):
-    """Production éolienne journalière moyenne (MW) de la région représentée par une ville."""
-    return (donnees[donnees[groupe] == ville]
-         .groupby("jour")[col_prod].mean())
+def moyenne_prod(donnees, ville, col_prod, groupe="ville"):
+    """Calcule la production moyenne par jour pour la filière col_prod (en MW)."""
+    serie = (donnees[donnees[groupe] == ville]
+             .groupby("jour")[col_prod].mean())
+    serie.index = pd.to_datetime(serie.index)
+    return serie
 
-  
+
 
 def donnees_meteo_prod(donnees, ville, col_meteo, col_prod):
-    """Une ligne par jour pour une ville : une variable météo et la production moyenne."""
+    """Une ligne par jour pour une ville : une variable météo et la production moyenne par jour."""
     return (donnees[donnees["ville"] == ville]
             .groupby("jour")
             .agg(meteo=(col_meteo, "first"), prod=(col_prod, "mean"))
             .dropna())
+
+
+def production_mensuelle(donnees, ville, col_prod, groupe="ville"):
+    """Énergie produite par mois (GWh) pour la filière col_prod."""
+    mw_moyens = moyenne_prod(donnees, ville, col_prod, groupe)   # MW moyens par jour
+    gwh_jour = mw_moyens * 24 / 1000                              # MW x 24 h = MWh, /1000 = GWh
+    return gwh_jour.resample("MS").sum()
+
 
 
 def tracer_scatter_vent_eolien(donnees, ville, col_vent="vent100_moy_jour", col_prod="eolien"):
@@ -30,7 +40,7 @@ def tracer_scatter_vent_eolien(donnees, ville, col_vent="vent100_moy_jour", col_
 
 
 def tracer_graphique_eolien(donnees, ville, col_prod="eolien", groupe="ville") :
-        g=moyenne_eolien(donnees, ville, col_prod="eolien", groupe="ville")
+        g=moyenne_prod(donnees, ville, col_prod="eolien", groupe="ville")
         g.index = pd.to_datetime(g.index)
         fig, ax = plt.subplots(figsize=(13, 4))
         ax.plot(g.index, g.values, linewidth=0.6, alpha=0.5, color="tab:blue",
@@ -42,3 +52,28 @@ def tracer_graphique_eolien(donnees, ville, col_prod="eolien", groupe="ville") :
         ax.set_ylabel("Production éolienne moyenne (MW)")
         ax.legend(loc="upper left")
         plt.show()
+
+def tracer_graphique_hydrau(donnees, ville, col_prod="hydraulique", groupe="ville") :
+        g=moyenne_prod(donnees, ville, col_prod, groupe="ville")
+        g.index = pd.to_datetime(g.index)
+        fig, ax = plt.subplots(figsize=(13, 4))
+        ax.plot(g.index, g.values, linewidth=0.6, alpha=0.5, color="tab:blue",
+            label="Moyenne journalière")
+        ax.plot(g.index, g.rolling(30, center=True).mean(), linewidth=1.8, color="tab:red",
+            label="Moyenne mobile 30 jours")
+        ax.set_title(f"Production hydraulique journalière, région de {ville.capitalize()} (2021-2025)")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Production hydraulique moyenne (MW)")
+        ax.legend(loc="upper left")
+        plt.show()
+
+def tracer_hydrau_mois(donnees, ville, col_prod="hydraulique"):
+    """Production hydraulique mensuelle (GWh) de la région représentée par une ville."""
+    prod = production_mensuelle(donnees, ville, col_prod)
+
+    fig, ax = plt.subplots(figsize=(12, 4))
+    ax.bar(prod.index, prod.values, width=25, color="tab:blue")
+    ax.set_title(f"Production hydraulique mensuelle, région de {ville.capitalize()} (2021-2025)")
+    ax.set_xlabel("Mois")
+    ax.set_ylabel("Production hydraulique (GWh)")
+    plt.show()
