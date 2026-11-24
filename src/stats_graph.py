@@ -28,8 +28,8 @@ def production_mensuelle(donnees, ville, col_prod, groupe="ville"):
 
 
 
-# Les fonctions suivantes servent que à afficher des statistiques qu'on a calculer avec les fonctions précédentes 
-import matplotlib.pyplot as plt
+# Les fonctions suivantes servent que à afficher des statistiques qu'on a calculé avec les fonctions précédentes 
+
 
 def corr(pluie,prod,ville) :
     m = pd.concat({"pluie": pluie, "prod": prod}, axis=1).dropna()
