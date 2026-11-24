@@ -45,3 +45,23 @@ def preparer_eco2mix(df):
 
     horaire["ville"] = horaire["code_insee_region"].map(REGION_VERS_VILLE)
     return horaire
+def tracer_moyennes_par_region(elec):
+    """Production moyenne par filière (barres empilées) et consommation moyenne (losanges) par région.
+    Renvoie le tableau des moyennes, en MW."""
+    import matplotlib.pyplot as plt
+
+    moyennes = elec.groupby("ville")[COLONNES_ELEC].mean().sort_values("consommation")
+    filieres = ["nucleaire", "hydraulique", "eolien", "solaire"]
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+    moyennes[filieres].plot(kind="bar", stacked=True, ax=ax)
+    ax.scatter(range(len(moyennes)), moyennes["consommation"],
+               color="black", marker="D", zorder=3, label="Consommation")
+    ax.set_title("Production moyenne par filière et consommation moyenne par région (2021-2025)")
+    ax.set_xlabel("Région (représentée par son chef-lieu)")
+    ax.set_ylabel("Puissance moyenne (MW)")
+    ax.set_xticklabels([v.capitalize() for v in moyennes.index], rotation=45, ha="right")
+    ax.legend()
+    fig.tight_layout()
+    plt.show()
+    return moyennes.round(0)
