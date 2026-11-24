@@ -1,8 +1,6 @@
-   pandas
-   requests
-   matplotlib
-   seaborn
-   jupyter
-   json
-   pathlib
-   IPython.display
+pandas
+requests
+matplotlib
+seaborn
+jupyter
+pyarrow
