@@ -25,6 +25,39 @@ def production_mensuelle(donnees, ville, col_prod, groupe="ville"):
     return gwh_jour.resample("MS").sum()
 
 
+def corr(pluie,prod,ville) :
+    m = pd.concat({"pluie": pluie, "prod": prod}, axis=1).dropna()
+    import matplotlib.pyplot as plt
+
+    lags = range(0, 7)
+    corr = [m["prod"].corr(m["pluie"].shift(k), method="spearman") for k in lags]
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.bar(list(lags), corr)
+    ax.set_title(f"Corrélation entre la production hydraulique et les précipitations décalées, {ville.capitalize()}")
+    ax.set_xlabel("Décalage de la pluie (mois)")
+    ax.set_ylabel("Corrélation de Spearman")
+    plt.show()
+
+
+def tracer_scatter_pluie_prec(pluie,prod,ville) :
+    m = pd.concat({"pluie": pluie, "prod": prod}, axis=1).dropna()
+    k = 1   # à remplacer par le décalage trouvé en piste 1
+    plt.scatter(m["pluie"].shift(k), m["prod"], s=15)
+    plt.xlabel(f"Précipitations du mois M-{k} (mm)")
+    plt.ylabel("Production hydraulique (GWh)")
+    plt.show()  
+
+def tracer_graph_hydrau_pluie(pluie,prod,ville) :
+    m=pd.concat({"pluie": pluie, "prod": prod}, axis=1).dropna()
+    fig, ax1 = plt.subplots(figsize=(12, 4))
+    ax1.bar(m.index, m["pluie"], width=25, color="lightsteelblue", label="Précipitations")
+    ax1.set_ylabel("Précipitations (mm)")
+    ax2 = ax1.twinx()
+    ax2.plot(m.index, m["prod"], color="tab:blue", marker="o", label="Production hydraulique")
+    ax2.set_ylabel("Production hydraulique (GWh)")
+    ax1.set_title(f"Précipitations et production hydraulique mensuelles, {ville.capitalize()}")
+    plt.show()
 
 def tracer_scatter_vent_eolien(donnees, ville, col_vent="vent100_moy_jour", col_prod="eolien"):
     """Nuage de points : vent moyen journalier / production éolienne journalière."""
