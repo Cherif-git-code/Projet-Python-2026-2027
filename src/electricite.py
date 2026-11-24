@@ -1,6 +1,6 @@
 import io
 from pathlib import Path
-
+import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 
@@ -24,6 +24,7 @@ def charger_eco2mix(chemin="data/raw/eco2mix_regional.parquet"):
     df.to_parquet(chemin, index=False)
     return df
 # Une ville par région (chef-lieu), avec les mêmes noms que dans les données météo de Hugo
+
 REGION_VERS_VILLE = {
     11: "paris", 84: "lyon", 27: "dijon", 53: "rennes",
     24: "orleans", 44: "strasbourg", 32: "lille", 28: "rouen",
@@ -45,11 +46,11 @@ def preparer_eco2mix(df):
 
     horaire["ville"] = horaire["code_insee_region"].map(REGION_VERS_VILLE)
     return horaire
+
+
 def tracer_moyennes_par_region(elec):
     """Production moyenne par filière (barres empilées) et consommation moyenne (losanges) par région.
     Renvoie le tableau des moyennes, en MW."""
-    import matplotlib.pyplot as plt
-
     moyennes = elec.groupby("ville")[COLONNES_ELEC].mean().sort_values("consommation")
     filieres = ["nucleaire", "hydraulique", "eolien", "solaire"]
 
@@ -65,3 +66,4 @@ def tracer_moyennes_par_region(elec):
     fig.tight_layout()
     plt.show()
     return moyennes.round(0)
+
