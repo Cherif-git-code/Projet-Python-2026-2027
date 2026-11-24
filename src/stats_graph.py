@@ -2,35 +2,39 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 def moyenne_prod(donnees, ville, col_prod, groupe="ville"):
-    """Calcule la production moyenne par jour pour la filière col_prod (en MW)."""
-    serie = (donnees[donnees[groupe] == ville]
+    """fonction qui calcule la production moyenne par jour pour le type de production"""
+    res = (donnees[donnees[groupe] == ville]
              .groupby("jour")[col_prod].mean())
-    serie.index = pd.to_datetime(serie.index)
-    return serie
+    res.index = pd.to_datetime(res.index)
+    return res
 
 
 
 def donnees_meteo_prod(donnees, ville, col_meteo, col_prod):
-    """Une ligne par jour pour une ville : une variable météo et la production moyenne par jour."""
-    return (donnees[donnees["ville"] == ville]
+    """fonction qui collecte une variable météo et la production moyenne pour le type de production col_prod par jour."""
+    res=(donnees[donnees["ville"] == ville]
             .groupby("jour")
             .agg(meteo=(col_meteo, "first"), prod=(col_prod, "mean"))
             .dropna())
+    return res
 
 
 def production_mensuelle(donnees, ville, col_prod, groupe="ville"):
-    """Énergie produite par mois (GWh) pour la filière col_prod."""
+    """fonction qui calcule l'énergie produite par mois en GWh pour le type de production col_prod."""
     mw_moyens = moyenne_prod(donnees, ville, col_prod, groupe)   # MW moyens par jour
-    gwh_jour = mw_moyens * 24 / 1000                              # MW x 24 h = MWh, /1000 = GWh
-    return gwh_jour.resample("MS").sum()
+    gwh_jour = mw_moyens * 24 / 1000                              #on convertit en gwh pour pas que les valeurs soient trop grosses
+    a=gwh_jour.resample("MS").sum()
+    return a
+
+
+
+# Les fonctions suivantes servent que à afficher des statistiques qu'on a calculé avec les fonctions précédentes 
 
 
 def corr(pluie,prod,ville) :
     m = pd.concat({"pluie": pluie, "prod": prod}, axis=1).dropna()
-    import matplotlib.pyplot as plt
-
-    lags = range(0, 7)
-    corr = [m["prod"].corr(m["pluie"].shift(k), method="spearman") for k in lags]
+    lags = range(0, 7) #On se donne 7 mois max pour le décalage (assez arbitrairement mais je vois pas comment le décalage pourrait être plus grand que 7 mois)
+    corr = [m["prod"].corr(m["pluie"].shift(k), method="spearman") for k in lags] #On calcule la corrélation pour chaque valeur
 
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.bar(list(lags), corr)
@@ -42,7 +46,7 @@ def corr(pluie,prod,ville) :
 
 def tracer_scatter_pluie_prec(pluie,prod,ville) :
     m = pd.concat({"pluie": pluie, "prod": prod}, axis=1).dropna()
-    k = 1   # à remplacer par le décalage trouvé en piste 1
+    k = 1   # on a vu sur le graphique que 1 était la meilleure valeur.
     plt.scatter(m["pluie"].shift(k), m["prod"], s=15)
     plt.xlabel(f"Précipitations du mois M-{k} (mm)")
     plt.ylabel("Production hydraulique (GWh)")
@@ -60,9 +64,7 @@ def tracer_graph_hydrau_pluie(pluie,prod,ville) :
     plt.show()
 
 def tracer_scatter_vent_eolien(donnees, ville, col_vent="vent100_moy_jour", col_prod="eolien"):
-    """Nuage de points : vent moyen journalier / production éolienne journalière."""
     g = donnees_meteo_prod(donnees, ville, col_meteo=col_vent, col_prod=col_prod)
-
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.scatter(g["meteo"], g["prod"], s=10, alpha=0.35)
     ax.set_title(f"Vent moyen journalier à 100 m et production éolienne, région de {ville.capitalize()}")
@@ -101,7 +103,6 @@ def tracer_graphique_hydrau(donnees, ville, col_prod="hydraulique", groupe="vill
         plt.show()
 
 def tracer_hydrau_mois(donnees, ville, col_prod="hydraulique"):
-    """Production hydraulique mensuelle (GWh) de la région représentée par une ville."""
     prod = production_mensuelle(donnees, ville, col_prod)
 
     fig, ax = plt.subplots(figsize=(12, 4))
