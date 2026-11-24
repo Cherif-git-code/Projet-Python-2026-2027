@@ -23,7 +23,8 @@ def charger_eco2mix(chemin="data/raw/eco2mix_regional.parquet"):
     df = pd.read_csv(io.StringIO(reponse.text), sep=";", dtype={"eolien": str})
     df.to_parquet(chemin, index=False)
     return df
-# Une ville par région (chef-lieu), avec les mêmes noms que dans les données météo de Hugo
+# Une ville par région (la plus grande), avec les mêmes noms que dans les données météo
+
 
 REGION_VERS_VILLE = {
     11: "paris", 84: "lyon", 27: "dijon", 53: "rennes",
