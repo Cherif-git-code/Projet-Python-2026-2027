@@ -22,6 +22,34 @@ def charger_meteo(raw_dir):
     return pd.concat(frames, ignore_index=True)
 
 
+def extremum_meteo(meteo, col_met, mode="max", ville=None):
+    """Heure (locale, France) et valeur de l'extremum de col_met.
+
+    mode  : "max" ou "min"
+    ville : si None, un résultat par ville ; sinon, uniquement cette ville
+    """
+    if mode not in ("max", "min"):
+        raise ValueError("mode doit valoir 'max' ou 'min'")
+
+    df = meteo if ville is None else meteo[meteo["ville"] == ville]
+    df = df.dropna(subset=[col_met])
+
+    # Ligne de l'extremum pour chaque ville
+    idx = df.groupby("ville")[col_met].agg("idxmax" if mode == "max" else "idxmin")
+    res = df.loc[idx, ["ville", "time", col_met]].reset_index(drop=True)
+
+    # time est en UTC dans meteo_pur : on le passe en heure française pour l'affichage
+    if res["time"].dt.tz is not None:
+        res["time"] = res["time"].dt.tz_convert("Europe/Paris")
+    return res.rename(columns={col_met: "valeur"})
+
+
+
+
+
+
+
+
 def temp_journ(df):
     """Température moyenne par jour et par ville par jours.""" #On en a besoin car en été on a des nuits ou la température tombe sous les 15 degrés sans qu'il ne fasse froid pour autant
     jour = (
@@ -107,6 +135,23 @@ def vent_max_jour(meteo, ville):
 
 def precipitation_jour(meteo,ville) :
     return _serie_jour(meteo, ville, "precipitation")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #Fonctions utiliser pour plot les fonctions précédentes
 
