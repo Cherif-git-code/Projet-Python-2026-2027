@@ -23,22 +23,19 @@ def charger_meteo(raw_dir):
 
 
 def extremum_meteo(meteo, col_met, mode="max", ville=None):
-    """Heure (locale, France) et valeur de l'extremum de col_met.
-
-    mode  : "max" ou "min"
-    ville : si None, un résultat par ville ; sinon, uniquement cette ville
-    """
+    """ Fonction qui permet de donner la date (et la valeur) des extremums de la dimension métérologique spécifiée dans col_met (pour colonne météo)"""
     if mode not in ("max", "min"):
-        raise ValueError("mode doit valoir 'max' ou 'min'")
-
+        raise ValueError("mode doit valoir 'max' ou 'min'") #On veut regarder un extremum c'est un peu superflue dans mon utilisation mais ça me permet de regarder les valeurs que peuvent prendre le mode si j'ai oublié
+    
+    #Si on spécifie pas la ville on prend tout meteo sinon on prend que les valeurs de la bonne ville
     df = meteo if ville is None else meteo[meteo["ville"] == ville]
     df = df.dropna(subset=[col_met])
 
-    # Ligne de l'extremum pour chaque ville
+    # On récupère l'indice de la ligne où on a l'extremum recherché
     idx = df.groupby("ville")[col_met].agg("idxmax" if mode == "max" else "idxmin")
-    res = df.loc[idx, ["ville", "time", col_met]].reset_index(drop=True)
+    res = df.loc[idx, ["ville", "time", col_met]].reset_index(drop=True) #on prend toute la ligne
 
-    # time est en UTC dans meteo_pur : on le passe en heure française pour l'affichage
+    # on a pas encore fait le traitement sur le temps donc il est encore en UTC
     if res["time"].dt.tz is not None:
         res["time"] = res["time"].dt.tz_convert("Europe/Paris")
     return res.rename(columns={col_met: "valeur"})
