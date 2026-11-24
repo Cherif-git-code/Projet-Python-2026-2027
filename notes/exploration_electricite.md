@@ -49,12 +49,14 @@
 - Retéléchargement long → enregistrer une fois dans `data/raw/`
 - Colonne parasite `column_30` → à ignorer
 
-## 5. Questions ouvertes
-- S'arrêter au 31/12/2025 (définitives uniquement) ou garder 2026 ?
-- Valeurs manquantes : où et quand ?
-- Utiliser le taux de charge pour neutraliser la hausse du parc installé ?
-- Enregistrement : CSV ou Parquet ?
-- Données brutes sur GitHub (100 Mo max par fichier) ou dans le `.gitignore` ?
+## 5. Choix retenus
+- Période : du 01/01/2021 au 31/12/2025, données définitives uniquement (2020 écarté à cause des confinements, 2026 parce que les données ne sont que consolidées).
+- Valeurs manquantes : les « - » de la colonne `eolien` deviennent des valeurs manquantes, la dernière demi-heure du 31/12/2025 est vide, et l'heure du passage à l'heure d'hiver (octobre) est absente chaque année. Après passage à l'heure et jointure avec la météo, il ne reste aucune valeur manquante.
+- Pas de temps : passage de la demi-heure à l'heure (moyenne des deux demi-heures, car ce sont des puissances en MW), pour correspondre aux données météo horaires.
+- Format : Parquet, plus léger et plus rapide à lire que le CSV, et qui conserve les types des colonnes.
+- Stockage : les données brutes sont versionnées sur GitHub (environ 10 Mo, sous la limite de 100 Mo), pour que le notebook tourne sans retélécharger.
+- Taux de charge : non utilisé. Il permettrait de neutraliser la hausse du parc installé (solaire notamment), c'est une piste d'amélioration.
+
 
 ## 6. Conclusion
 La source couvre tout le côté électricité. Elle ne contient aucune donnée météo :
